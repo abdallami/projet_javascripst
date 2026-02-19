@@ -1,24 +1,22 @@
 import Storage from "./API.js";
+import Auth from "./Auth.js";
 
 const mainApp = document.querySelector(".main");
-// Selecting the prodcut modal
 const addProModal = document.querySelector(".addProSection");
 const ProModalAddBtn = document.querySelector(".addProModalSubmitBtn");
 const ProModalCancelBtn = document.querySelector(".addProModalCancelBtn");
 const ModalTitle = document.querySelector(".addProModal__title");
 
-// Selecting the inputs in the add Product Modal
 const productNameInput = document.querySelector(".productNameInput");
 const categoryInput = document.querySelector("#categoryInput");
 const productQuantityInput = document.querySelector(".productQuantityInput");
 const productPriceInput = document.querySelector(".productPriceInput");
 
-// --------------------- SearchBar --------------------------------
 const searchBar = document.querySelector(".searchBarInput");
 
 class InventoryUi {
   constructor() {
-    this.id = 0; // Setting a default id
+    this.id = 0;
     ProModalAddBtn.addEventListener("click", (e) => {
       e.preventDefault();
       this.addProductModalLogic();
@@ -29,20 +27,21 @@ class InventoryUi {
     });
 
     addProModal.addEventListener("click", (e) => {
-      // Checking if the user click on the empty black space behind the add modal so we can close it
       if (e.target.classList.contains("addProSection")) {
-        this.closeProductModal(e); // Closing the Modal
+        this.closeProductModal(e);
       }
     });
   }
+
   setApp() {
-    // Updating our DOM with needed HTML!
+    const isAdmin = Auth.isAdmin();
+
     mainApp.innerHTML = `
     <div class="inventory-app">
         <div class="product-section__header">
-        <h1>Products</h1>
+        <h1>📦 Produits</h1>
         <div class="product-section__header__buttons">
-            <button class="addProBtn">Add Product</button>
+            ${isAdmin ? '<button class="addProBtn">➕ Ajouter Produit</button>' : ''}
         </div>
         </div>
 
@@ -52,204 +51,179 @@ class InventoryUi {
         </div>
     </div>`;
 
-    //  Selecting add Product Button and add eventListener
-    const addProBtn = document.querySelector(".addProBtn");
-    addProBtn.addEventListener("click", () => {
-      // Setting the title to be Add new Product
-      ModalTitle.textContent = "New Product";
-      ProModalAddBtn.textContent = "Add Product";
-      this.openProductModal();
-    });
+    // Si c'est un admin, ajouter l'événement du bouton
+    if (isAdmin) {
+      const addProBtn = document.querySelector(".addProBtn");
+      if (addProBtn) {
+        addProBtn.addEventListener("click", () => {
+          ModalTitle.textContent = "📝 Nouveau Produit";
+          ProModalAddBtn.textContent = "Ajouter";
+          this.openProductModal();
+        });
+      }
+    }
 
-    // Selecting the products table section
     this.productSectionHTMl = document.querySelector(".product-section-table");
     this.updateDom(Storage.getProducts());
   }
 
   updateDom(allProducts) {
+    const isAdmin = Auth.isAdmin();
+
     let result = `
     <tr class="table__title">
-        <td>Product</td>
-        <td>Quantity</td>
-        <td>Price</td>
-        <td>Category</td>
-        <td></td>
+        <td>Produit</td>
+        <td>Quantité</td>
+        <td>Prix</td>
+        <td>Catégorie</td>
+        ${isAdmin ? '<td>Actions</td>' : ''}
     </tr>    
     `;
 
-    // Getting all the Data
     allProducts.forEach((product) => {
-      result += this.createProductHTML(product); // Create HTML for each data
+      result += this.createProductHTML(product, isAdmin);
     });
 
-    this.productSectionHTMl.innerHTML = result; // Update the Dom
+    this.productSectionHTMl.innerHTML = result;
 
-    // Selecting the delete and edit Icon
-    const deleteBtns = document.querySelectorAll(".deleteIcon");
-    deleteBtns.forEach((deleteBtn) =>
-      deleteBtn.addEventListener("click", (e) => {
-        const id = Number(e.target.dataset.id);
-        this.deleteBtnLogic(id);
-      })
-    );
+    if (isAdmin) {
+      const deleteBtns = document.querySelectorAll(".deleteIcon");
+      deleteBtns.forEach((deleteBtn) =>
+        deleteBtn.addEventListener("click", (e) => {
+          const id = Number(e.target.dataset.id);
+          this.deleteBtnLogic(id);
+        })
+      );
 
-    const editBtns = document.querySelectorAll(".editIcon");
-    editBtns.forEach((editBtn) =>
-      editBtn.addEventListener("click", (e) => {
-        const id = Number(e.target.dataset.id);
-        this.editBtnLogic(id);
-      })
-    );
-  }
-
-  createProductHTML(prodcut) {
-    return `
-     <tr>
-        <td>${prodcut.title}</td>
-        <td>${prodcut.quantity}</td>
-        <td>$${prodcut.price}</td>
-        <td>${this.getCategoryName(prodcut.category)}</td>
-        <td class="editTableSection">
-            <div class="table__icons">
-            <div class="editIcon" data-id=${prodcut.id}>
-                <svg class="icon">
-                <use
-                    xlink:href="../assets/images/sprite.svg#editIcon"
-                ></use>
-                </svg>
-            </div>
-            <div class="deleteIcon" data-id=${prodcut.id}>
-                <img src="../assets/images/deleteIcon.svg" alt="deleteIcon" />
-            </div>
-            </div>
-        </td>
-    </tr>
-
-    `;
-  }
-
-  getCategoryName(id) {
-    const allCategories = Storage.getCategories();
-    const existed = allCategories.find((category) => category.id == id);
-    if (existed) {
-      return existed.title;
+      const editBtns = document.querySelectorAll(".editIcon");
+      editBtns.forEach((editBtn) =>
+        editBtn.addEventListener("click", (e) => {
+          const id = Number(e.target.dataset.id);
+          this.editBtnLogic(id);
+        })
+      );
     }
-    return "No-Category";
   }
+
+createProductHTML(product, isAdmin) {
+  return `
+  <tr>
+    <td>${product.title}</td>
+    <td>${product.quantity}</td>
+    <td>$${product.price}</td>
+    <td>${product.category}</td>
+    ${isAdmin ? `
+    <td>
+      <svg class="icon editIcon" data-id="${product.id}" style="cursor: pointer; margin-right: 10px;" title="Modifier">
+        <use xlink:href="../assets/images/sprite.svg#editIcon"></use>
+      </svg>
+      <img
+        src="../assets/images/deleteIcon.svg"
+        alt="Supprimer"
+        class="deleteIcon"
+        data-id="${product.id}"
+        style="cursor: pointer; width: 20px;"
+        title="Supprimer"
+      />
+    </td>
+    ` : `
+    <td style="color: #999; font-size: 12px;">👤 Lecture seule</td>
+    `}
+  </tr>`;
+}
 
   openProductModal() {
     addProModal.classList.remove("--hidden");
-    this.clearInputsField();
+    this.clearInputs();
   }
 
   closeProductModal() {
     addProModal.classList.add("--hidden");
-    this.clearInputsField();
+    this.clearInputs();
     this.id = 0;
   }
 
-  clearInputsField() {
-    // clear the input fields
-    [
-      productPriceInput,
-      productQuantityInput,
-      categoryInput,
-      productNameInput,
-    ].forEach((input) => (input.value = ""));
+  clearInputs() {
+    productNameInput.value = "";
+    productQuantityInput.value = "";
+    productPriceInput.value = "";
+    categoryInput.value = "";
   }
 
   addProductModalLogic() {
-    // Checking of the field are empty or not
+    // ✅ Vérifier si c'est un admin
+    if (!Auth.isAdmin()) {
+      alert("❌ Vous n'avez pas la permission d'ajouter des produits!");
+      return;
+    }
+
     if (
-      !productNameInput.value ||
-      !categoryInput.value ||
-      !productQuantityInput.value ||
-      !productPriceInput.value
+      productNameInput.value === "" ||
+      productQuantityInput.value === "" ||
+      productPriceInput.value === "" ||
+      categoryInput.value === ""
     ) {
-      alert("Please enter all of the fields!");
-      return -1;
-    }
-    if (
-      Number(productPriceInput.value) < 0 ||
-      Number(productQuantityInput.value) < 0
-    ) {
-      alert("Quantity and Price should be at least 0");
-      return -1;
+      alert("❌ Veuillez remplir tous les champs!");
+      return;
     }
 
-    // checking for duplication
-    if (this.id != 0) {
-      const allProducts = Storage.getProducts();
-      const otherProducts = allProducts.filter(
-        (product) => product.id != this.id
-      );
-      console.log(productNameInput.value);
-
-      const existed = otherProducts.find(
-        (product) =>
-          product.title.toLowerCase().trim() ==
-          productNameInput.value.toLowerCase().trim()
-      );
-      if (existed) {
-        alert("Product already Exist");
-        return -1;
-      }
-    }
-
-    // Updating Local Storage
-    Storage.saveProduct({
+    const productData = {
       id: this.id,
-      title: productNameInput.value.trim(),
-      category: categoryInput.value,
+      title: productNameInput.value,
       quantity: Number(productQuantityInput.value),
       price: Number(productPriceInput.value),
-    });
+      category: categoryInput.value
+    };
 
-    this.id = 0;
-
-    searchBar.value = "";
-
-    // Updating the DOM
-    this.updateDom(Storage.getProducts());
-    // Closing the modal
+    Storage.saveProduct(productData);
+    this.setApp();
     this.closeProductModal();
   }
 
-  deleteBtnLogic(id) {
-    // Deleting the Product
-    Storage.deleteProduct(id);
-    // Update the DOM
-    searchBar.value = "";
-
-    this.updateDom(Storage.getProducts());
-  }
-
   editBtnLogic(id) {
-    this.id = id;
-    // Getting all the Products
+    // ✅ Vérifier si c'est un admin
+    if (!Auth.isAdmin()) {
+      alert("❌ Vous n'avez pas la permission de modifier les produits!");
+      return;
+    }
+
     const allProducts = Storage.getProducts();
-    // Finding the product with ID
-    const selectedProduct = allProducts.find((prodcut) => prodcut.id == id);
+    const product = allProducts.find((p) => p.id === id);
 
-    // Opening the Modal
-    this.openProductModal();
+    if (product) {
+      this.id = id;
+      productNameInput.value = product.title;
+      productQuantityInput.value = product.quantity;
+      productPriceInput.value = product.price;
+      categoryInput.value = product.category;
 
-    ModalTitle.textContent = "Edit Product"; // Upating Modal title
-    ProModalAddBtn.textContent = "Submit Edit";
-    // Updating the value for each input
-    productNameInput.value = selectedProduct.title;
-    categoryInput.value = selectedProduct.category;
-    productQuantityInput.value = selectedProduct.quantity;
-    productPriceInput.value = selectedProduct.price;
+      ModalTitle.textContent = "✏️ Modifier Produit";
+      ProModalAddBtn.textContent = "Mettre à jour";
+      this.openProductModal();
+    }
   }
 
-  seachLogic(inputValue) {
-    const targetValue = inputValue.toLowerCase().trim();
+  deleteBtnLogic(id) {
+    // ✅ Vérifier si c'est un admin
+    if (!Auth.isAdmin()) {
+      alert("❌ Vous n'avez pas la permission de supprimer les produits!");
+      return;
+    }
+
+    if (confirm("Es-tu sûr de vouloir supprimer ce produit ?")) {
+      Storage.deleteProduct(id);
+      this.setApp();
+    }
+  }
+
+  seachLogic(searchTerm) {
     const allProducts = Storage.getProducts();
-    const filteredItem = allProducts.filter((product) =>
-      product.title.toLowerCase().trim().includes(targetValue)
+    const filteredProducts = allProducts.filter(
+      (product) =>
+        product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    this.updateDom(filteredItem);
+    this.updateDom(filteredProducts);
   }
 }
 

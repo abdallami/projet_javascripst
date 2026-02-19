@@ -1,21 +1,18 @@
 import Storage from "./API.js";
+import Auth from "./Auth.js";
 
 const mainApp = document.querySelector(".main");
 
-// ------------------------- Selecting Category Modal --------------------------
 const categoryModal = document.querySelector(".EditCategorySection");
 const categoryBack = document.querySelector(".EditCategorySection");
 const cancelBtnEdit = document.querySelector(".cancelBtnEdit");
 const categoryModTitle = document.querySelector(".EditCatMod__title");
 
-// Selecting the inputs
 const editTitleInput = document.querySelector("#editTitle");
 const editDesInput = document.querySelector("#editDescription");
 
-// Selecting the Btns
 const submitBtnEdit = document.querySelector(".submitBtnEdit");
 
-// ---------------------- Category Inputs options in Inventory ------------------
 const categoryInput = document.querySelector("#categoryInput");
 
 class CategoryUi {
@@ -38,43 +35,63 @@ class CategoryUi {
   }
 
   setApp() {
-    mainApp.innerHTML = `
-    <div class="categoryUi">
-        <div class="category__header">
-            <h1>Categories</h1>
-            <button class="addCategoryBtn">Add Category</button>
-        </div>
-        <div class="category__items">
-           
-        </div>
-    </div>
-    `;
+    const isAdmin = Auth.isAdmin();
+
+    // ✅ AFFICHER TOUJOURS LA PAGE, MAIS AVEC CONTENU DIFFÉRENT
+    if (!isAdmin) {
+      // Les clients voient juste les catégories, pas de bouton d'ajout
+      mainApp.innerHTML = `
+      <div class="categoryUi">
+          <div class="category__header">
+              <h1>📂 Catégories</h1>
+              <p style="color: #999; font-size: 14px;">👤 Lecture seule - Vous n'avez pas accès à la modification</p>
+          </div>
+          <div class="category__items">
+             
+          </div>
+      </div>
+      `;
+    } else {
+      // Les admins voient le bouton d'ajout
+      mainApp.innerHTML = `
+      <div class="categoryUi">
+          <div class="category__header">
+              <h1>📂 Catégories</h1>
+              <button class="addCategoryBtn">➕ Ajouter Catégorie</button>
+          </div>
+          <div class="category__items">
+             
+          </div>
+      </div>
+      `;
+
+      const addCategoryBtn = document.querySelector(".addCategoryBtn");
+      if (addCategoryBtn) {
+        addCategoryBtn.addEventListener("click", () => {
+          categoryModTitle.textContent = "📝 Ajouter Catégorie";
+          this.openCategoryModal();
+        });
+      }
+    }
 
     this.HTMLContainer = document.querySelector(".category__items");
     this.updateDOM();
-    // Selecting the add Category button on the main page
-    const addCategoryBtn = document.querySelector(".addCategoryBtn");
-
-    addCategoryBtn.addEventListener("click", () => {
-      categoryModTitle.textContent = "Add Category"; // Updating the Modal Title
-      this.openCategoryModal();
-    });
   }
 
   openCategoryModal() {
-    // Opening the Modal
     categoryModal.classList.remove("--hidden");
     this.clearInputs();
   }
 
   closeCategoryModal() {
-    // Closing the Modal
     categoryModal.classList.add("--hidden");
     this.clearInputs();
     this.id = 0;
   }
 
   createHTML(category) {
+    const isAdmin = Auth.isAdmin();
+
     return `
      <div class="category__item">
         <div class="category__item__text">
@@ -82,27 +99,36 @@ class CategoryUi {
             <p class="description">${category.description}</p>
         </div>
         <div class="category__item__icons">
-            <svg class="icon editCategoryIcon" data-id=${category.id}>
+            ${isAdmin ? `
+            <svg class="icon editCategoryIcon" data-id="${category.id}" style="cursor: pointer;">
                 <use xlink:href="../assets/images/sprite.svg#editIcon"></use>
             </svg>
             <img
                 src="../assets/images/deleteIcon.svg"
-                alt="delete Icon"
+                alt="Supprimer"
                 class="deleteBtnCategory"
-                data-id=${category.id}
+                data-id="${category.id}"
+                style="cursor: pointer;"
             />
+            ` : `
+            <p style="color: #999; font-size: 12px;">🔒 Modification refusée</p>
+            `}
         </div>
     </div>`;
   }
 
   submitBtnLogic() {
-    // Checking if the input are empty or not
-    if (editDesInput.value == "" || editTitleInput.value == "") {
-      alert("Please Enter all of the fields!");
-      return -1;
+    // ✅ Vérifier si c'est un admin
+    if (!Auth.isAdmin()) {
+      alert("❌ Vous n'avez pas la permission de modifier les catégories!");
+      return;
     }
 
-    // checking for duplication
+    if (editDesInput.value == "" || editTitleInput.value == "") {
+      alert("❌ Veuillez remplir tous les champs!");
+      return;
+    }
+
     if (this.id != 0) {
       const allCategories = Storage.getCategories();
       const otherCategories = allCategories.filter(
@@ -114,104 +140,114 @@ class CategoryUi {
           editTitleInput.value.toLowerCase().trim()
       );
       if (existed) {
-        alert("Category already Exist");
-        return -1;
+        alert("❌ Cette catégorie existe déjà!");
+        return;
+      }
+    } else {
+      const allCategories = Storage.getCategories();
+      const existed = allCategories.find(
+        (category) =>
+          category.title.toLowerCase().trim() ==
+          editTitleInput.value.toLowerCase().trim()
+      );
+      if (existed) {
+        alert("❌ Cette catégorie existe déjà!");
+        return;
       }
     }
 
-    // Saving the data to localstorage
-    Storage.saveCategorie({
+    const data = {
       id: this.id,
       title: editTitleInput.value,
-      description: editDesInput.value,
-    });
+      description: editDesInput.value
+    };
 
-    this.id = 0;
-
-    // Update the DOM
-    this.updateDOM();
-
-    // Closing the Modal
+    Storage.saveCategorie(data);
+    this.setApp();
     this.closeCategoryModal();
+    this.updateCategoryOptions();
   }
 
   updateDOM() {
-    // Creating html for each category
-    let result = "";
     const allCategories = Storage.getCategories();
+    let result = "";
+
     allCategories.forEach((category) => {
       result += this.createHTML(category);
     });
 
-    this.HTMLContainer.innerHTML = result; // Updating the DOM
+    this.HTMLContainer.innerHTML = result;
 
-    this.updateCategoryOptions();
-
-    // Selecting the delete Icon
-    const deleteBtns = document.querySelectorAll(".deleteBtnCategory");
-    deleteBtns.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        const id = Number(e.target.dataset.id);
-        this.deleteCategory(id);
+    // ✅ SEULEMENT POUR LES ADMINS
+    if (Auth.isAdmin()) {
+      const editBtns = document.querySelectorAll(".editCategoryIcon");
+      editBtns.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const id = Number(e.target.dataset.id);
+          this.editCategoryBtnLogic(id);
+        });
       });
-    });
 
-    // Selecting the edit Icon
-    const editBtns = document.querySelectorAll(".editCategoryIcon");
-    editBtns.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        const id = Number(e.target.dataset.id);
-        this.editCategory(id);
+      const deleteBtns = document.querySelectorAll(".deleteBtnCategory");
+      deleteBtns.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const id = Number(e.target.dataset.id);
+          this.deleteCategoryLogic(id);
+        });
       });
-    });
+    }
+  }
+
+  editCategoryBtnLogic(id) {
+    // ✅ Vérifier si c'est un admin
+    if (!Auth.isAdmin()) {
+      alert("❌ Vous n'avez pas la permission de modifier les catégories!");
+      return;
+    }
+
+    const allCategories = Storage.getCategories();
+    const category = allCategories.find((cat) => cat.id == id);
+
+    if (category) {
+      this.id = id;
+      editTitleInput.value = category.title;
+      editDesInput.value = category.description;
+      categoryModTitle.textContent = "✏️ Modifier Catégorie";
+      submitBtnEdit.textContent = "Mettre à jour";
+      this.openCategoryModal();
+    }
+  }
+
+  deleteCategoryLogic(id) {
+    // ✅ Vérifier si c'est un admin
+    if (!Auth.isAdmin()) {
+      alert("❌ Vous n'avez pas la permission de supprimer les catégories!");
+      return;
+    }
+
+    if (confirm("Es-tu sûr de vouloir supprimer cette catégorie ?")) {
+      Storage.deleteCategory(id);
+      this.setApp();
+      this.updateCategoryOptions();
+    }
   }
 
   clearInputs() {
-    // Clearing the inputs values
-    [editDesInput, editTitleInput].forEach((input) => {
-      input.value = "";
-    });
-  }
-
-  deleteCategory(id) {
-    // Deleting the category
-    Storage.deleteCategory(id);
-    this.updateDOM();
-  }
-
-  editCategory(id) {
-    const allCategories = Storage.getCategories();
-
-    const selectedCategory = allCategories.find(
-      (category) => category.id == id
-    );
-
-    // Setting the new id so we can change only this id
-    this.id = id;
-
-    // Update the title of the modal
-    categoryModTitle.textContent = "Edit Category";
-
-    // Opening the Modal
-    this.openCategoryModal();
-
-    // Updating the values
-    editTitleInput.value = selectedCategory.title;
-    editDesInput.value = selectedCategory.description;
+    editTitleInput.value = "";
+    editDesInput.value = "";
   }
 
   updateCategoryOptions() {
-    // Updating the Options category in the Inventory
-    let result = `<option value="">Select product category</option>
-    <option value="no-cat">No Category</option>`;
-    // Getting all the value
     const allCategories = Storage.getCategories();
-    allCategories.forEach((category) => {
-      result += `<option value=${category.id}>${category.title}</option>`;
-    });
-
-    // Updating the DOM
-    categoryInput.innerHTML = result;
+    if (categoryInput) {
+      categoryInput.innerHTML = '<option value="">Sélectionner une catégorie</option>';
+      allCategories.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category.title;
+        option.textContent = category.title;
+        categoryInput.appendChild(option);
+      });
+    }
   }
 }
 
