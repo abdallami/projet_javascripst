@@ -17,6 +17,21 @@
 6. [Dépannage](#dépannage)
 
 ---
+## ⚡ CONFIGURATION RAPIDE
+
+**Si vous êtes pressé, voici les 5 étapes essentielles :**
+
+```
+ÉTAPE 1️⃣  → Extraire le fichier ZIP
+         ↓
+ÉTAPE 2️⃣  → Ouvrir le dossier dans VS Code
+         ↓
+ÉTAPE 3️⃣  → Installer l'extension Live Server
+         ↓
+ÉTAPE 4️⃣  → Lancer l'application (clic droit sur index.html qui est dans dossier publique )
+         ↓
+ÉTAPE 5️⃣  → Se connecter entend que admin ou creer un compte pour se connecter entend qu'un client pour tester.
+         ↓
 
 ## 🎯 VUE D'ENSEMBLE
 
@@ -44,21 +59,7 @@ Une **application web complète de gestion d'inventaire** qui permet de :
 
 ---
 
-## ⚡ CONFIGURATION RAPIDE
 
-**Si vous êtes pressé, voici les 5 étapes essentielles :**
-
-```
-ÉTAPE 1️⃣  → Extraire le fichier ZIP
-         ↓
-ÉTAPE 2️⃣  → Ouvrir le dossier dans VS Code
-         ↓
-ÉTAPE 3️⃣  → Installer l'extension Live Server
-         ↓
-ÉTAPE 4️⃣  → Lancer l'application (clic droit sur index.html qui est dans dossier publique )
-         ↓
-ÉTAPE 5️⃣  → Se connecter entend que admin ou creer un compte pour se connecter entend qu'un client pour tester.
-         ↓
 
 
 ## 📋 INSTALLATION DÉTAILLÉE
