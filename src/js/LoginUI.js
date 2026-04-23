@@ -5,7 +5,7 @@ const mainApp = document.querySelector(".main");
 class LoginUI {
   setLoginPage() {
     mainApp.innerHTML = `
-    <div class="login-container">
+    <div class="login-container" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
       <div class="login-box">
         <h1>🏪 Gestion d'E-Stock</h1>
         <p class="login-subtitle">Connexion</p>
@@ -39,9 +39,10 @@ class LoginUI {
           </p>
           
           <div style="background: #f0f0f0; padding: 10px; margin-top: 15px; border-radius: 5px; font-size: 12px;">
-            <p style="margin: 0; font-weight: bold;">👤 Compte démo :</p>
+            <p style="margin: 0; font-weight: bold;">👤 Compte admin :</p>
             <p style="margin: 5px 0 0 0;">📧 admin@stock.com</p>
             <p style="margin: 5px 0 0 0;">🔑 admin123</p>
+            <p style="margin: 5px 0 0 0;">Pour client s'inscrire et se connecter</p>
           </div>
         </form>
 
@@ -66,8 +67,11 @@ class LoginUI {
 
   setSignupPage() {
     mainApp.innerHTML = `
-    <div class="login-container">
-      <div class="login-box">
+    <div class="login-container" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+      <div class="login-box style="
+      justify-content: center; align-items: center;
+      height: 50%;
+  ">
         <h1>🏪 Gestion d'E-Stock</h1>
         <p class="login-subtitle">Créer un compte</p>
         
